@@ -1,6 +1,6 @@
 ---
 title: Model CTA Space
-emoji: ⚡
+emoji: ✉️
 colorFrom: green
 colorTo: blue
 sdk: streamlit
