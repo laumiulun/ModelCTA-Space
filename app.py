@@ -55,7 +55,7 @@ st.markdown("# Call to Action: Email Industry")
 stats_col1, stats_col2, stats_col3, stats_col4 = st.columns([1,1,1,1])
 
 with stats_col1:
-    st.metric(label="Production", value="Development")
+    st.metric(label="Production", value="Devel")
 with stats_col2:
     st.metric(label="Accuracy", value="80.49%")
 
