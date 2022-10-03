@@ -3,10 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from IPython.display import display
-import panel as pn
 
-import numpy as np
-from numpy import arange
 import email
 import re
 from bs4 import BeautifulSoup
@@ -21,7 +18,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import r2_score
-
 
 from io import BytesIO, StringIO
 import tempfile
@@ -108,42 +104,6 @@ def display_CTA_both(percentage, color, text):
         if i != len(text)-1:
             base_string += "<br>"
     return base_string
-
-def get_dropdown_list():
-#     industry_list = list(set(list(email_data.industry)))
-    industry_list = ['Academic and Education', 'Entertainment', 'Financial', 'Healthcare', 'Hospitality', 
-                     'Retail', 'Software and Technology', 'Transportation']
-    campaign_list = ['Abandoned_Cart', 'Newsletter', 'Promotional', 'Survey', 
-                     'Transactional', 'Webinar', 'Engagement', 'Review_Request', 'Product_Announcement']  
-    target_varible_list = ['Click_To_Open_Rate', 'Conversion_Rate']
-    #target_varible_list = ['Click_To_Open_Rate', 'Conversion_Rate']
-    return industry_list, campaign_list, target_varible_list
-
-def select_email_campaign_variables(industry_list, campaign_list, target_varible_list):
-    dropdown_industry = ipywidgets.Dropdown(options = industry_list, value = 'Retail')
-    print("Please select your industry")
-    display(dropdown_industry)
-    
-    dropdown_campaign = ipywidgets.Dropdown(options = campaign_list, value = 'Promotional')
-    print("Please select your campaign type")
-    display(dropdown_campaign)
-    
-    radiobtn_target = ipywidgets.RadioButtons(options = target_varible_list)
-#     dropdown_target =  widgets.Dropdown(options = target_varible_list)
-    print("Please select the target varible you want to optimize")
-    display(radiobtn_target) 
-    
-    cta_list= ['Color','Text', 'Both']
-    
-    radiobtn_cta = ipywidgets.RadioButtons(options = cta_list)
-
-#     dropdown_cta = widgets.Dropdown(options = cta_list)
-#     model_menu.observe(on_change, names=model_list)
-    print("Select the Call-To-Action Feature you would like to analyze for predictive analytics")
-    display(radiobtn_cta)
-    
-    return dropdown_industry, dropdown_campaign, radiobtn_target, radiobtn_cta
-
 
 
 ## "=",=3D removed from html_tags.csv
@@ -354,42 +314,6 @@ def email_parser(parsed_email):
 #         print(f'{int(idx)+1}. Call-To-Action Text: {(text[idx]).upper()}    Color: {color("  ", fore="#ffffff", back=ccolor[idx])}')
 
     return vtext, ccolor, text
-
-
-## Select which CTA to be used for analysis
-
-def select_cta_button(ccolor, text):
-    user_input = []
-    print("\nNumber of Call-To-Actions in the email:", len(text), '\n')
-    
-    print('Select which Call-To-Action button(s) you would like to analyze: \n')
-    
-    def toggle_all(change):
-        for cb in user_input:
-            cb.value = select_all.value
-    
-    select_all = ipywidgets.Checkbox(value=False, description='Select All', disabled=False, indent=False)
-    display(select_all)
-    
-        
-    for idx, i in enumerate(text):
-        option_str = str(int(idx)+1) + '. Call-To-Action Text: '
-        cta_menu = ipywidgets.Checkbox(value=False, description=option_str, disabled=False, indent=False)
-        
-        btn_layout = ipywidgets.Layout(height='20px', width='20px')
-        color_button = ipywidgets.Button(layout = btn_layout, description = '')
-        color_button.style.button_color = ccolor[idx]
-        
-        widg_container = ipywidgets.GridBox([cta_menu, ipywidgets.Label((text[idx]).upper()),
-                                        ipywidgets.Label(' Color: ')  , color_button], 
-                                      layout=ipywidgets.Layout(grid_template_columns="180px 150px 50px 100px"))
-        display(widg_container)
-        user_input.append(cta_menu)
-        
-    select_all.observe(toggle_all)
-        
-    return user_input  
-
 
 
 
