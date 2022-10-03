@@ -7,9 +7,7 @@ from IPython.display import display
 import email
 import re
 from bs4 import BeautifulSoup
-# import ipywidgets as widgets
-import ipywidgets
-# from colr import color
+
 import random
 from gensim.utils import simple_preprocess
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
