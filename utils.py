@@ -7,14 +7,10 @@ from IPython.display import display
 import email
 import re
 from bs4 import BeautifulSoup
-
+import numpy as np
 import random
 from gensim.utils import simple_preprocess
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from sklearn.preprocessing import normalize
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
 from sklearn.metrics import r2_score
 
 from io import StringIO
@@ -157,22 +153,10 @@ def parse_features_from_html(body, soup):
     visible_text = []
     ccolor = []
     text = []
-    
-#     vtexts = soup.findAll(text=True)  ## Find all the text in the doc
+
     bodytext = soup.get_text()
     vtexts = preprocess_text(bodytext)
     vtexts = " ".join(vtexts.split())
-#     for v in vtexts:
-#         if len(v) > 2:
-#             if not "mso" in v:
-#                 if not "endif" in v:
-#                     if not "if !vml" in v:
-#                         vtext = re.sub(r'\W+', ' ', v)
-#                         if len(vtext) > 2:
-#                             visible_text.append(vtext)
-
-    # extracting links
-    #items = soup.find_all('a', {"class": "mso_button"})
     items = soup.find_all('a', {'href': True})
     for i in items:  # Items contain all <a> with with 'href'
         try:
@@ -246,9 +230,6 @@ def parse_features_from_html(body, soup):
 ## RETURN: Each CTA text and it's color as lists
 
 def email_parser(parsed_email):
-#     email_data = parsed_email.value  # parsed_email.data[0]
-#     emailstr = email_data.decode("utf-8")
-    # efile = open(parsed_email.value,'r')
     emailstr = ""
     for i, line in enumerate(parsed_email):
         emailstr += line
@@ -290,8 +271,6 @@ def text_embeddings(texts):
 #     sentence_embeddings = model.encode(texts)
     return model
     
-
-    
     ###### Model Training - ONLY TO SAVE IN S3 BUCKET ######
 
     
@@ -310,10 +289,7 @@ def get_predictions(selected_variable, selected_industry, selected_campaign,
         y_name = 'ytest_Conversion_Rate.csv'
         key = 'models/' + 'modelCTA_Conversion_Rate.sav'
     
-#     training_dataset = import_data('s3://emailcampaigntrainingdata/ModelCTA', 'training.csv')
-#     X_test = import_data('s3://emailcampaigntrainingdata/ModelCTA', X_name)
-#     y_test = import_data('s3://emailcampaigntrainingdata/ModelCTA', y_name)
-        
+
     training_dataset = get_files_from_aws('emailcampaigntrainingdata', 'ModelCTA/training.csv')
     X_test = get_files_from_aws('emailcampaigntrainingdata', 'ModelCTA/' + X_name)
     y_test = get_files_from_aws('emailcampaigntrainingdata', 'ModelCTA/' + y_name)
@@ -351,7 +327,6 @@ def get_predictions(selected_variable, selected_industry, selected_campaign,
 
     for ip_idx, ip in enumerate(cta_menu):  # For each CTA selected
         if ip.value == True:
-            # print(f'\n\x1b[4mCall-To-Action button {int(ip_idx)+1}\x1b[0m: ')
             cta_ind = ip_idx
             selected_color = cta_col[cta_ind]
             selected_text = cta_txt[cta_ind]
@@ -359,7 +334,6 @@ def get_predictions(selected_variable, selected_industry, selected_campaign,
             df_uploaded = pd.DataFrame(columns=['industry', 'campaign', 'cta_color', 'cta_text'])
             df_uploaded.loc[0] = [selected_industry, selected_campaign, cta_col, cta_txt]    
             df_uploaded['industry_code'] = industry_code_dict.get(selected_industry)
-#             df_uploaded['campaign_code'] = campaign_code_dict.get(selected_campaign)
             
             if selected_campaign not in campaign_code_dict.keys():
                 campaign_code_dict[selected_campaign] = max(campaign_code_dict.values()) + 1
@@ -389,7 +363,6 @@ def get_predictions(selected_variable, selected_industry, selected_campaign,
             if output_rate < 0:
                 st.text("Sorry, Current model couldn't provide predictions on the target variable you selected.")
             else:
-                # st.text(f'\x1b[35m\nModel Prediction on the {selected_variable} is: \x1b[1m{round(output_rate*100, 2)}%\x1b[39m\x1b[22m')
                 st.info('Model Prediction on the {} is {}'.format(selected_variable, round(output_rate*100, 2)))
                 selected_industry_code = industry_code_dict.get(selected_industry)
                 selected_campaign_code = campaign_code_dict.get(selected_campaign)
@@ -576,8 +549,5 @@ def get_predictions(selected_variable, selected_industry, selected_campaign,
 
                     cta_result = display_CTA_both(target_rate_arr, recom_cta_color_arr,recom_cta_text_arr)                                                                                        
                     st.components.v1.html(cta_result, height=len(target_rate_arr)*30+50)
-             
 
-                # st.text('\n')
-                
     return r2_test
