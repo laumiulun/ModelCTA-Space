@@ -222,7 +222,7 @@ elif uploaded_file is not None and st.session_state.generate_pred:
             for i in range(len(text)):
                 cta_menu[i].value = True
         else:
-            index = int(cta_selected.split(' ')[-1])
+            index = int(cta_selected.split(' ')[-1])-1
             cta_menu[index].value = True
 
 
