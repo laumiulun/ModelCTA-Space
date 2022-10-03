@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
 import PIL
+import ipywidgets 
 from joblib import dump, load
 
 from bokeh.models.widgets import Div
 
 import main_app
 
+import utils
 
 def table_data():
     # creating table data
@@ -47,6 +49,9 @@ def url_button(button_name,url):
         div = Div(text=html)
         st.bokeh_chart(div)
 
+
+if 'generate_pred' not in st.session_state:
+	st.session_state.generate_pred = False
 
 st.markdown("# Call to Action: Email Industry")
 
@@ -115,13 +120,14 @@ campaign_types = [
 ]
 
 target_variables = [
-    'click_to_open_rate',
-    'conversion_rate'
+    'Click_To_Open_Rate',
+    'Conversion_Rate'
 ]
 
-call_2_action = [ 
+call2action = [ 
     'Color','Text','Both'
 ]
+
 
 uploaded_file = st.file_uploader("Please upload your email (In HTML Format)", type=["html"])
 
@@ -147,13 +153,97 @@ target = st.selectbox(
     target_variables
 )
 
-if st.button('Generate Predictions'):
-    if uploaded_file is None:
-        st.error('Please upload a email (HTML format)')
-    else:
-        placeholder = st.empty()
-        placeholder.text('Loading Data')
+call2action_feature = st.selectbox(
+    'Select the Call-To-Action Feature you would like to analyze for predictive analytics',
+    call2action
+)
 
-        # Starting predictions
-        model = load('models/CTA.joblib')
-        
+def generate_cta_list(num_text):
+    cta_list = []
+    for i in range(num_text):
+        cta_list.append('CTA Number {}'.format(i+1))
+    cta_list.append('All')
+    return cta_list
+
+
+def display_CTA(text,color):
+    """
+    Display one cta based on their text and color
+    """
+    base_string = ""
+    for i in range(len(text)):
+        base_string +=  """
+        CTA Number {}:
+        <input type="button" 
+            style="background-color:{};
+            color:black;
+            width:150px;
+            height:30px;
+            margin:4px" 
+            value="{}">""".format(i+1,color[i],text[i])
+        if i != len(text)-1:
+            base_string += "<br>"
+    return base_string
+
+generate_pred = st.button('Generate Predictions')
+if generate_pred:
+    st.session_state.generate_pred = True
+
+if uploaded_file is None and st.session_state.generate_pred:
+    st.error('Please upload a email (HTML format)')
+elif uploaded_file is not None and st.session_state.generate_pred:
+    placeholder = st.empty()
+    placeholder.text('Loading Data')
+
+    # Starting predictions
+    # st.text(uploaded_file.getvalue().decode("utf-8"))
+    vtext, ccolor, text = utils.email_parser(uploaded_file.getvalue().decode("utf-8"))
+
+    if (len(ccolor) > 0) and (len(text) > 0):
+        st.info("Number of Call-To-Actions in the email: {}".format(len(text)))
+        cta_list = generate_cta_list(len(text))
+        cta_selected = st.radio(
+            'Select the Call-To-Action you would like to analyze ?',  
+                cta_list)
+        base_string = display_CTA(text,ccolor)
+        st.components.v1.html(base_string,height = len(text)*30+50)
+
+        predict = st.button('Predict Optimial CTA')
+
+
+        cta_menu = []
+        for i in range(len(text)):
+            cta_menu.append(ipywidgets.Checkbox(
+                value=False,
+                description='Call-To-Action Text: {}'.format(i+1),
+                disabled=False,
+                indent=False
+            ))
+        # st.text(cta_selected)
+        if cta_selected == 'All':
+            for i in range(len(text)):
+                cta_menu[i].value = True
+        else:
+            index = int(cta_selected.split(' ')[-1])
+            cta_menu[index].value = True
+
+        # st.text(cta_menu)
+
+        # st.text(cta_list)
+        if st.session_state.generate_pred and predict:
+            utils.get_predictions(
+                target,
+                industry,
+                campaign,
+                call2action_feature,
+                vtext,
+                ccolor,
+                text,
+                cta_menu)
+
+    else:
+        st.error("The email you uploaded does not contain any Call-To-Actions.")
+    
+    # st.text(cta_selected)
+    placeholder.text('')
+
