@@ -196,7 +196,6 @@ elif uploaded_file is not None and st.session_state.generate_pred:
     placeholder.text('Loading Data')
 
     # Starting predictions
-    # st.text(uploaded_file.getvalue().decode("utf-8"))
     vtext, ccolor, text = utils.email_parser(uploaded_file.getvalue().decode("utf-8"))
 
     if (len(ccolor) > 0) and (len(text) > 0):
@@ -219,7 +218,6 @@ elif uploaded_file is not None and st.session_state.generate_pred:
                 disabled=False,
                 indent=False
             ))
-        # st.text(cta_selected)
         if cta_selected == 'All':
             for i in range(len(text)):
                 cta_menu[i].value = True
@@ -227,9 +225,7 @@ elif uploaded_file is not None and st.session_state.generate_pred:
             index = int(cta_selected.split(' ')[-1])
             cta_menu[index].value = True
 
-        # st.text(cta_menu)
 
-        # st.text(cta_list)
         if st.session_state.generate_pred and predict:
             utils.get_predictions(
                 target,
@@ -244,6 +240,6 @@ elif uploaded_file is not None and st.session_state.generate_pred:
     else:
         st.error("The email you uploaded does not contain any Call-To-Actions.")
     
-    # st.text(cta_selected)
+
     placeholder.text('')
 

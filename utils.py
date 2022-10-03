@@ -1,12 +1,9 @@
-# import s3fs 
 from hashlib import shake_128
 import pandas as pd
 import streamlit as st
 
-from ipywidgets import FileUpload
 from IPython.display import display
 from ipyfilechooser import FileChooser
-import io
 import panel as pn
 
 import numpy as np
@@ -16,54 +13,59 @@ import re
 from bs4 import BeautifulSoup
 # import ipywidgets as widgets
 import ipywidgets
-from colr import color
+# from colr import color
 import random
-
 from gensim.utils import simple_preprocess
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-# from sentence_transformers import SentenceTransformer
-# from scipy.spatial.distance import cosine
-
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
-# from sklearn.model_selection import KFold
-
-from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
-from sklearn.kernel_ridge import KernelRidge
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.linear_model import Ridge
-from sklearn.linear_model import Lasso
-from sklearn.linear_model import SGDRegressor
-from sklearn.neural_network import MLPRegressor
-# import xgboost as xg
 from sklearn.metrics import r2_score
 
-from io import BytesIO 
+
+from io import BytesIO, StringIO
 import tempfile
-# import pickle
 import boto3
 s3 = boto3.resource('s3')
 import joblib
 s3_client = boto3.client('s3')
 
 
+def get_files_from_aws(bucket,prefix):
+    """
+        get files from aws s3 bucket
+    
+    bucket (STRING): bucket name
+    prefix (STRING): file location in s3 bucket
+    """
+    s3_client = boto3.client('s3',
+        aws_access_key_id = st.secrets["aws_id"],
+        aws_secret_access_key = st.secrets["aws_key"])
+
+    file_obj = s3_client.get_object(Bucket=bucket,Key=prefix)
+    body = file_obj['Body']
+    string = body.read().decode('utf-8')
+    
+    df = pd.read_csv(StringIO(string),encoding = "ISO-8859-1",index_col=0)
+    df= df.reset_index(drop=True)
+
+    return df 
+
 
 ### Read in data
-def import_data(bucket, key):
-    location = 's3://{}/{}'.format(bucket, key)
-    df_data = pd.read_csv(location, encoding = "ISO-8859-1",index_col=0)
-    df_data = df_data.reset_index(drop=True)
-    return df_data
+# def import_data(bucket, key):
+#     location = 's3://{}/{}'.format(bucket, key)
+#     df_data = pd.read_csv(location, encoding = "ISO-8859-1",index_col=0)
+#     df_data = df_data.reset_index(drop=True)
+#     return df_data
 
 
-def import_data_local(file):
-    df_data = pd.read_csv(file, encoding = "ISO-8859-1",index_col=0)
-    df_data = df_data.reset_index(drop=True)
+# def import_data_local(file):
+#     df_data = pd.read_csv(file, encoding = "ISO-8859-1",index_col=0)
+#     df_data = df_data.reset_index(drop=True)
     
-    return df_data
+#     return df_data
 
 ### create file uploading widget
 def email_upload():
@@ -76,10 +78,9 @@ def email_upload():
 #     return upload
 
 
-
 def display_CTA_color(text,color):
     """
-    Display one cta based on their text and color
+    Display one cta based on their color
     """
     base_string = ""
     for i in range(len(text)):
@@ -98,10 +99,8 @@ def display_CTA_color(text,color):
 
 def display_CTA_text(percentage,text):
     """
-    Display one cta based on their text and color
+    Display one cta based on their text
     """
-    # st.text(percentage)
-    # st.text(color)
     base_string = ""
     for i in range(len(percentage)):
         base_string +=  """
@@ -109,7 +108,7 @@ def display_CTA_text(percentage,text):
         <input type="button" 
             style="background-color:#FFFFFF;
             color:black;
-            width:150px;
+            width:fit-content;;
             height:30px;
             margin:4px" 
             value="{}">Percentage: {}%""".format(i+1,text[i].upper(),percentage[i])
@@ -119,9 +118,8 @@ def display_CTA_text(percentage,text):
 
 def display_CTA_both(percentage, color, text):
     """
-    Display one cta based on their text and color
+    Display one based on their color and text
     """
-    
     base_string = ""
     for i in range(len(text)):
         base_string +=  """
@@ -129,7 +127,7 @@ def display_CTA_both(percentage, color, text):
         <input type="button" 
             style="background-color:{};
             color:black;
-            width:150px;
+            width: fit-content;
             height:30px;
             margin:4px" 
             value="{}">Percentage: {}%""".format(i+1,color[i],text[i].upper(),percentage[i])
@@ -444,74 +442,7 @@ def text_embeddings(texts):
 
     
     ###### Model Training - ONLY TO SAVE IN S3 BUCKET ######
-    
-def train_model(training_dataset, selected_variable, selected_industry, selected_campaign, 
-                selected_cta, email_text, cta_col, cta_txt, cta_menu):
-    
-    email_body_dict = {}
-    for _, r in training_dataset.iterrows():
-        if r[0] not in email_body_dict.keys():
-            email_body_dict[r[0]] = r[4]
-            
-    email_body = email_body_dict.keys()
-    texts = list(email_body_dict.values())
-    
-    ## convert categorial variables to onehot encoding dummy variable (Indsutry)
-    training_dataset['industry'] = training_dataset['industry'].astype('category')
-    training_dataset['industry_code'] = training_dataset['industry'].cat.codes
-    industry_code_dict = dict(zip(training_dataset.industry, training_dataset.industry_code))
 
-    training_dataset['campaign'] = training_dataset['campaign'].astype('category')
-    training_dataset['campaign_code'] = training_dataset['campaign'].cat.codes
-    campaign_code_dict = dict(zip(training_dataset.campaign, training_dataset.campaign_code))
-    
-    training_dataset['cta_color'] = training_dataset['cta_color'].astype('category')
-    training_dataset['color_code'] = training_dataset['cta_color'].cat.codes
-    color_code_dict = dict(zip(training_dataset.cta_color, training_dataset.color_code))
-   
-    training_dataset['cta_text'] = training_dataset['cta_text'].astype('category')
-    training_dataset['text_code'] = training_dataset['cta_text'].cat.codes
-    text_code_dict = dict(zip(training_dataset.cta_text, training_dataset.text_code))
-    
-    target_variables = ['Click_To_Open_Rate', 'Conversion_Rate']
-    
-    ## Select the cta, industry code and campaign code for training data
-    X = training_dataset.drop(['body', 'industry', 'campaign', 'cta_color', 'cta_text', 'cta_num', 
-                               'Click_To_Open_Rate', 'Conversion_Rate'], axis = 1, inplace = False)
-
-    ## Normalization
-    X_norm = normalize(X, norm = 'l2')
-    
-    ## Select the output variable chosen by the user
-    y = training_dataset[[selected_variable]]
-    
-    
-    ## Split train test set
-    X_train, X_test, y_train, y_test = train_test_split(X_norm, np.ravel(y), test_size = 0.1, 
-                                                        random_state=0,shuffle=True)  # ransom state = 42
-    
-    regr = RandomForestRegressor(random_state = 35)
-    
-    ## Model Training
-    regr.fit(X_train, y_train)
-
-    ###### SAVE TO S3 ######
-    ## 'Click_To_Open_Rate', 'Conversion_Rate'
-    modellocation = "sagemakermodelcta"   
-    model_filename = "modelCTA_Conversion_Rate.sav"
-    OutputFile = modellocation + model_filename
-    # WRITE model to S3 bucket
-    # with tempfile.TemporaryFile() as fp:
-        # joblib.dump(regr, fp)
-        # fp.seek(0)
-        # use bucket_name and OutputFile - s3 location path in string format.
-        # s3.Bucket('sagemakermodelcta').put_object(Key= OutputFile, Body=fp.read())
-    # save training data & evl data to s3
-    training_dataset.to_csv("s3://emailcampaigntrainingdata/ModelCTA/training.csv")
-    pd.DataFrame(X_test).to_csv("s3://emailcampaigntrainingdata/ModelCTA/Xtest_Conversion_Rate.csv")
-    pd.DataFrame(y_test).to_csv("s3://emailcampaigntrainingdata/ModelCTA/ytest_Conversion_Rate.csv")
-
-### Model Training
     
 def get_predictions(selected_variable, selected_industry, selected_campaign, 
                     selected_cta, email_text, cta_col, cta_txt, cta_menu):
@@ -521,22 +452,21 @@ def get_predictions(selected_variable, selected_industry, selected_campaign,
     if selected_variable == 'Click_To_Open_Rate':
         X_name = 'Xtest_CTOR.csv'
         y_name = 'ytest_CTOR.csv'
-        key = 'data/' + 'modelCTA_CTOR.sav'
+        key = 'models/' + 'modelCTA_CTOR.sav'
         
     elif selected_variable == 'Conversion_Rate':
         X_name = 'Xtest_Conversion_Rate.csv'
         y_name = 'ytest_Conversion_Rate.csv'
-        key = 'data/' + 'modelCTA_Conversion_Rate.sav'
+        key = 'models/' + 'modelCTA_Conversion_Rate.sav'
     
 #     training_dataset = import_data('s3://emailcampaigntrainingdata/ModelCTA', 'training.csv')
 #     X_test = import_data('s3://emailcampaigntrainingdata/ModelCTA', X_name)
 #     y_test = import_data('s3://emailcampaigntrainingdata/ModelCTA', y_name)
         
-    training_dataset = import_data_local('data/training_CTA.csv')
-    X_test = import_data_local('data/' + X_name)
-    y_test = import_data_local('data/' + y_name)
-    
-    
+    training_dataset = get_files_from_aws('emailcampaigntrainingdata', 'ModelCTA/training.csv')
+    X_test = get_files_from_aws('emailcampaigntrainingdata', 'ModelCTA/' + X_name)
+    y_test = get_files_from_aws('emailcampaigntrainingdata', 'ModelCTA/' + y_name)
+
     # load model from S3
     with tempfile.TemporaryFile() as fp:
         # s3_client.download_fileobj(Fileobj=fp, Bucket=bucket_name, Key=key)
