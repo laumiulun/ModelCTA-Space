@@ -17,7 +17,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import r2_score
 
-from io import BytesIO, StringIO
+from io import StringIO
 import tempfile
 import boto3
 s3 = boto3.resource('s3')
@@ -139,7 +139,6 @@ def preprocess_text(doc):
         doc = doc.replace('=\n', '')
     
     doc = doc.replace('%3D', '=')
-#     print ('MODIFIED: ', doc)
     return doc
 
 def parse_features_from_html(body, soup):
@@ -175,9 +174,6 @@ def parse_features_from_html(body, soup):
     # extracting links
     #items = soup.find_all('a', {"class": "mso_button"})
     items = soup.find_all('a', {'href': True})
-#     print(items)
-#     print('++++++++++++++')
-
     for i in items:  # Items contain all <a> with with 'href'
         try:
             #if i['style']:
@@ -203,23 +199,8 @@ def parse_features_from_html(body, soup):
                             cl = rgb_to_hex((int(rgb[0]), int(rgb[1]), int(rgb[2])))
                         ccolor.append(cl.strip())  # Add background color to CTA color list
                         color_flag = 1
-#                         print(body)
-                    
-#                 if 'padding' in s:  # Check if border-radius is there for a button border (CTA)
-#                     print(styles)
-#                     color_flag = 1
-                
-#                 elif 'color' in s:
-#                     color.append(s.split(':')[1])
-                
-#             text.append(i.select_one("span").text)
+
             if color_flag == 1:
-#                 i_str = str(i)
-#                 if ('>' in i_str):
-#                     if (i_str.index('>') != -1) and (i_str[i_str.index('>')+1] != '<'):
-#                         text.append(i_str[i_str.index('>')+1:i_str.index('<')-1])
-#                 t = i.findAll(text=True)
-#                 text.append(t)
 
                 ## Remove surrounding '<>' of the text
                 clean = re.compile('<.*?>')
@@ -238,9 +219,7 @@ def parse_features_from_html(body, soup):
 
         except:
             continue
-            
-#         print(text)
-#         print(color)
+
 
     op_color = []  # Output text and color lists
     op_text = []
@@ -284,32 +263,8 @@ def email_parser(parsed_email):
             doc = preprocess_text(body)
             soup = BeautifulSoup(doc)
 
-#     if b.is_multipart():
-#         for part in b.walk():
-#             ctype = part.get_content_type()
-#             cdispo = str(part.get('Content-Disposition'))
-
-#             # skip any text/plain (txt) attachments
-#             if ctype == 'text/plain' and 'attachment' not in cdispo:
-#                 body = part.get_payload()  # decode
-#                 break
-#     # not multipart - i.e. plain text, no attachments, keeping fingers crossed
-#     else:
-#         body = b.get_payload()
-        
-#     print('EMAIL: ', body)
-#     doc = preprocess_text(body)
-#     soup = BeautifulSoup(doc)
-#     paragraphs = soup.find_all('body')
-#     for paragraph in paragraphs:
-#         print(paragraph)
-#     print(soup)
-                
             ## Get CTA features from soup items of emails
     vtext, ccolor, text = parse_features_from_html(body, soup)
-#     print(vtext)
-        
-#         print(f'{int(idx)+1}. Call-To-Action Text: {(text[idx]).upper()}    Color: {color("  ", fore="#ffffff", back=ccolor[idx])}')
 
     return vtext, ccolor, text
 

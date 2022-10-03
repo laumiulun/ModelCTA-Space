@@ -3,3 +3,4 @@ joblib
 ipywidgets
 boto3
 bs4
+gensim
