@@ -3,7 +3,6 @@ import pandas as pd
 import streamlit as st
 
 from IPython.display import display
-from ipyfilechooser import FileChooser
 import panel as pn
 
 import numpy as np
@@ -51,31 +50,6 @@ def get_files_from_aws(bucket,prefix):
     df= df.reset_index(drop=True)
 
     return df 
-
-
-### Read in data
-# def import_data(bucket, key):
-#     location = 's3://{}/{}'.format(bucket, key)
-#     df_data = pd.read_csv(location, encoding = "ISO-8859-1",index_col=0)
-#     df_data = df_data.reset_index(drop=True)
-#     return df_data
-
-
-# def import_data_local(file):
-#     df_data = pd.read_csv(file, encoding = "ISO-8859-1",index_col=0)
-#     df_data = df_data.reset_index(drop=True)
-    
-#     return df_data
-
-### create file uploading widget
-def email_upload():
-    print("Please upload your email (In HTML Format)")
-#     upload = pn.widgets.FileInput(accept='.html')  # FileUpload(accept='.html', multiple=True)
-#     display(upload)
-    fc = FileChooser()
-    display(fc)
-    return fc
-#     return upload
 
 
 def display_CTA_color(text,color):
