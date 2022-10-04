@@ -1,5 +1,5 @@
 bokeh==2.4.1
-joblib==0.1.0
+joblib==.1.0
 ipywidgets
 boto3
 bs4
